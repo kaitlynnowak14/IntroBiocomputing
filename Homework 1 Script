@@ -1,0 +1,42 @@
+# Split into head and last 4 broken lines
+head -n -4 ex3.human > ex3_head.human
+tail -n 4 ex3.human > ex3_tail.human
+
+# Fix 4 broken lines
+awk -F'\t' 'BEGIN{OFS="\t"} {print $1,$2,$3,$4,$5,$6,$7,"","",$8,""}' ex3_tail.human > ex3_tail_fixed.human
+
+# Merge back into 1 file
+cat ex3_head.human ex3_tail_fixed.human > ex3_fixed.human
+
+# Check the end to make sure it is correct
+tail -n 6 ex3_fixed.human | column -t
+
+# Count number of unique genes and variants per gene
+awk -F'\t' '{count[$10]++} END {
+    print "Total unique genes:", length(count)
+    for (g in count) {
+        print g, count[g]
+    }
+}' ex3_fixed.human | sort -k2,2nr
+
+# Count number of unique individuals and variants per individual
+awk -F'\t' '{count[$7]++} END {
+    print "Total unique individuals:", length(count)
+    for (id in count) {
+        print id, count[id]
+    }
+}' ex3_fixed.human | sort -k2,2nr
+
+# output line numbers of the lines to extract (10th column = NOC2L)
+awk -F'\t' -v col=10 -v term='NOC2L' '$col == term {print NR}' ex3_fixed.human > NOC2L_line_numbers
+
+# Extract lines according to line numbers file
+ while read -r n; do
+>     tail -n +"$n" ex3_fixed.human | head -n 1
+> done < NOC2L_line_numbers > NOC2L_extraction.txt
+
+# Combine two steps without outputting line numbers to a file
+awk -F'\t' -v col=10 -v term='NOC2L' '$col == term {print NR}' ex3_fixed.human \
+  | while read -r n; do
+        tail -n +"$n" ex3_fixed.human | head -n 1
+    done > NOC2L_lines.txt
