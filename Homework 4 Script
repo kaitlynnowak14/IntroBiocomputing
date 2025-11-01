@@ -1,0 +1,98 @@
+# 1. Log into RRA cluster
+
+# 2. Move into Session 9 directory
+cd IntroBiocomputing/
+cd Session\ 9/
+
+# 3. Create .py file
+nano compare_ids/py
+
+# 4. Write in .py file
+# Homework 4: Dictionary-based ID comparison
+# Created output files for union, intersection, and unique elements
+# No sets used
+
+# Load files into dictionaries
+file1 = "idlist1.txt"
+file2 = "idlist2.txt"
+
+# Read file 1 into dictionary
+dict1 = {}
+with open(file1, "r") as f:
+        for line in f:
+                id = line.strip()
+                dict1[id] = 1
+
+# Read file 2 into dictionary
+dict2 = {}
+with open(file2, "r") as f:
+        for line in f:
+                id = line.strip()
+                dict2[id] = 1
+
+# Ask user for task choice
+print("Choose operation:")
+print("1 = Union")
+print("2 = Intersection")
+print("3 = IDs unique to list 1")
+print("4 = IDs unique to list 2")
+
+choice = raw_input("Enter 1-4: ").strip()
+
+result = []
+outfile = ""
+
+# Union
+if choice == "1":
+        temp = {}
+        for id in dict1:
+                temp[id] = 1
+        for id in dict2:
+                temp[id] = 1
+        result = list(temp.keys())
+        outfile = "union.txt"
+
+#Intersection
+elif choice == "2":
+        for id in dict1:
+                if id in dict2:
+                        result.append(id)
+        outfile = "intersection.txt"
+
+# Unique to list1
+elif choice == "3":
+        for id in dict1:
+                if id not in dict2:
+                        result.append(id)
+        outfile = "unique_list1.txt"
+
+# Unique to list2
+elif choice == "4":
+        for id in dict2:
+                if id not in dict1:
+                        result.append(id)
+        outfile = "unique_list2.txt"
+
+else:
+     	print("Invalid choice")
+        exit()
+
+# Save files
+with open(outfile, "w") as out:
+        for id in result:
+                out.write(id + "\n")
+
+# Print results
+print("\nResults saved to: " + outfile)
+print("\nTotal: " + str(len(result)) + "\n")
+
+for id in result:
+        print(id)
+
+# 5. Save .py file using ^X + Y + Enter
+
+# 6. Run each operation in Python 2
+python compare_ids.py
+
+# 7. Confirm outfiles are saved into Session 9
+ls
