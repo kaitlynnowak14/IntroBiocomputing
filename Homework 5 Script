@@ -70,4 +70,4 @@ print("File written to snplist_chrpos.txt")
 python snplist_chrpos.py
 
 # 9. Look at file to make sure it looks right
-cat snplist_chrpos.py
+head snplist_chrpos.py
