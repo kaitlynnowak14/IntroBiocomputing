@@ -1,0 +1,73 @@
+# 1. Log into RRA cluster
+
+# 2. Navigate into Session 10 folder
+cd IntroBiocomputing/
+cd Session\ 10/
+
+# 3. Clean snplist.txt
+nano clean_snplist.py
+
+import re
+
+input_file = "snplist.txt"
+output_file = "snplist_clean.txt"
+
+with open(input_file) as f, open(output_file, "w") as out:
+        for line in f:
+                snps = re.split("[x,:\\s,]+", line.strip())
+                for snp in snps:  
+                        if snp.startswith("rs"):
+                                out.write(snp +	"\n")
+
+print("	Cleaned	SNP list saved to snplist_clean.txt")
+
+# 4. Run clean_snplist.py
+python clean_snplist.py
+
+# 5. Create unique SNP list
+sort snplist_clean.txt | uniq > snplist_unique.txt
+
+# 6. Download dbSNP file for positions
+wget https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/00-All.vcf.gz
+
+# 7. Create .py script to extract chr/pos
+nano snplist_chrpos.py
+
+import gzip
+
+vcf = "00-All.vcf.gz"
+snplist = "snplist_unique.txt"
+output = "snplist_chrpos.txt"
+
+# Load SNPs into a set for fast lookup
+snps = set(line.strip() for line in open(snplist))
+positions = {}
+
+with gzip.open(vcf, "rt") as f:
+        for line in f:
+                if line.startswith("#"):
+                        continue
+                fields = line.split("\t")
+                chrom = fields[0]
+                pos = fields[1]
+                rsid = fields[2]
+
+                if rsid in snps:
+                        positions[rsid] = (chrom, pos)
+
+with open(output, "w") as out:
+        out.write("chr\tpos\tsnp\n")
+        for snp in snps:
+                if snp in positions:
+                        chrom, pos = positions[snp]
+                        out.write("{}\t{}\t{}\n".format(chrom, pos, snp))
+                else:
+                     	out.write("NA\tNA\t{}\n".format(snp))
+
+print("File written to snplist_chrpos.txt")
+
+# 8. Run snplist_chrpos.py
+python snplist_chrpos.py
+
+# 9. Look at file to make sure it looks right
+cat snplist_chrpos.py
