@@ -1,0 +1,137 @@
+# 1. Create clean_snplist.py
+nano clean_snplist.py
+
+# =======================
+# Inside clean_snplist.py 
+# =======================
+
+#! /usr/bin/env python2
+
+import re
+
+input_file = "raw_snplist.txt"
+output_file = "snplist_clean.txt"
+
+snps = []
+
+# Read raw SNP list
+with open(input_file, "r") as f:                          
+        for line in f:
+                line = line.strip()
+                parts =	re.split("[x,:\\s,]+", line)
+                for p in parts:
+                        if p.startswith("rs"):  
+                                snps.append(p)
+
+# Remove duplicates       
+seen = set()
+unique_snps = []
+for s in snps:
+        if s not in seen:
+                unique_snps.append(s)
+                seen.add(s)
+
+# Write	cleaned	SNP list
+with open(output_file,	"w") as	out:
+        for s in unique_snps:
+                out.write(s + "\n")
+
+print("Cleaned SNP list	saved to snplist_clean.txt")
+print("Total input SNPs:", len(snps))
+print("Total unique rsIDs:", len(unique_snps))
+
+# 2. Run clean_snplist.py in Python2
+python2 clean_snplist.py
+
+# ===========================================================
+
+# 3. Download dbSNP file for positions
+wget https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/00-All.vcf.gz
+
+# 4. Create annotate_snps_dbsnp.py
+nano snplist_chrpos.py
+
+# =============================
+# Inside snplist_chrpos.py 
+# =============================
+
+#! /usr/bin/env python2
+
+import gzip
+vcf = "00-All.vcf.gz"
+snplist = "snplist_clean.txt"
+output = "snplist_chrpos.txt"
+
+# Load SNPs into a set for fast lookup
+snps = set(line.strip() for line in open(snplist))
+positions = {}
+
+with gzip.open(vcf, "rt") as f:
+        for line in f:
+                if line.startswith("#"):
+                        continue
+                fields = line.split("\t")
+                chrom = fields[0]
+                pos = fields[1]
+                rsid = fields[2]
+
+                if rsid in snps:
+                        positions[rsid] = (chrom, pos)
+
+with open(output, "w") as out:
+        out.write("chr\tps\tsnp\n")
+        for snp	in snps:
+                if snp in positions:
+                        chrom, pos = positions[snp]
+                        out.write("{}\t{}\t{}\n".format(chrom, pos, snp))
+                else:
+                        out.write("NA\tNA\t{}\n".format(snp))
+
+print("Annotation complete, output saved to snplist_chrpos.txt")
+
+# 5. Run snplist_chrpos.py in Python2
+python2 snplist_chrpos.py
+
+# ===========================================================
+
+# 6. Create summarize_snps.py
+nano summarize_snps.py
+
+# =============================
+# Inside summarize_snps.py
+# =============================
+
+#! /usr/bin/env python2
+
+import collections 
+
+input_file = "snplist_chrpos.txt"
+output_file = "summarize_snps.txt"
+
+chrom_counts = collections.defaultdict(int)
+found_count = 0
+missing_count =	0
+
+with open(input_file, "r") as f:
+        next(f)	# skip header
+        for line in f:
+                parts =	line.strip().split("\t")
+                chrom, pos, snp	= parts
+                if chrom == "NA":
+                        missing_count += 1
+                else:
+                        found_count += 1
+                        chrom_counts[chrom] += 1
+
+# Write	summary
+with open(output_file, "w") as out:
+        out.write("Chromosome\tSNP_count\n")
+        for chrom in sorted(chrom_counts.keys()):
+                out.write("{}\t{}\n".format(chrom, chrom_counts[chrom]))
+        out.write("\nTotal SNPs found in VCF: {}\n".format(found_count))
+	out.write("Total SNPs missing in VCF: {}\n".format(missing_count))
+
+print("Summary complete, saved to summarize_snps.txt")
+
+# 7. Run summarize_snps.py in Python2
+python2 summarize_snps.py
